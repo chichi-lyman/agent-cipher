@@ -1,0 +1,28 @@
+name: Agent Cipher Test
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - uses: astral-sh/setup-uv@v2
+        with:
+          enable-cache: true
+      - run: uv pip install --system -r requirements.txt -r requirements-dev.txt
+      - run: ruff check . || true
+      - run: |
+          if [ -d tests ]; then pytest -q --tb=line; else echo "No tests yet"; fi
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+      - run: bandit -r . -ll -q -x tests,.git || true
+      - run: pip-audit -r requirements.txt || true
